@@ -2,12 +2,11 @@
 
 > **Transform conversational AI development from "build everything" to "configure domain behavior"**
 
-AgentFlow is a production-ready framework for building sophisticated conversational AI agents with async workflows, per-user isolation, conversation threading, and a thriving plugin ecosystem. Focus on what makes your agent unique while leveraging battle-tested infrastructure for everything else.
+AgentFlow is a production-ready framework for building sophisticated conversational AI agents with async workflows, per-user isolation, and conversation threading. Focus on what makes your agent unique while leveraging battle-tested infrastructure for everything else.
 
 [![Python](https://img.shields.io/badge/python-3.7+-blue.svg)](https://python.org)
 [![License](https://img.shields.io/badge/license-Apache%202.0-blue.svg)](LICENSE)
 [![Framework](https://img.shields.io/badge/framework-async-orange.svg)](https://docs.python.org/3/library/asyncio.html)
-[![Plugins](https://img.shields.io/badge/plugins-enabled-purple.svg)](#plugin-ecosystem)
 
 ## Quick Start
 
@@ -91,7 +90,7 @@ class MyAgent:
 agent = await (AgentFrameworkBuilder()
     .with_intent_categories(my_domain_categories)    # ← Your unique logic
     .with_handlers(my_domain_handlers)               # ← Your unique logic  
-    .with_plugins(['aws_plugin', 'slack_plugin'])    # ← Reusable components
+    .with_handlers(my_domain_handlers)               # ← Your unique logic
     .with_config('production.yaml')                  # ← Production settings
     .build(llm_client, fastmcp_client))             # Ready to go!
 ```
@@ -248,87 +247,6 @@ gantt
     User 3 Request    :0, 5000
 ```
 
-## Plugin Ecosystem
-
-### Use Community Plugins
-
-```bash
-# Install popular plugins
-pip install agentflow-aws-plugin
-pip install agentflow-slack-plugin  
-pip install agentflow-jira-plugin
-```
-
-```python
-# Auto-discover and load plugins
-agent = await (AgentFrameworkBuilder()
-    .auto_discover_plugins('agentflow_community')
-    .build(llm_client, fastmcp_client))
-```
-
-### Create Your Own Plugins
-
-```python
-# my_company_plugin.py
-class CompanySupportPlugin:
-    def get_intent_categories(self):
-        return [
-            IntentCategory("COMPANY_OUTAGE", "Internal system issues", [...]),
-            IntentCategory("COMPANY_DEPLOY", "Deployment requests", [...])
-        ]
-    
-    def get_handlers(self):
-        return [CompanyOutageHandler(), CompanyDeployHandler()]
-
-def create_plugin():
-    return CompanySupportPlugin()
-```
-
-### Plugin Distribution
-
-```mermaid
-graph TB
-    subgraph "Plugin Ecosystem"
-        subgraph "Company Plugins"
-            CP1[Acme Support]
-            CP2[Acme Security] 
-            CP3[Acme HR]
-            CP4[Acme Deploy]
-        end
-        
-        subgraph "Community Plugins"
-            COM1[AWS Operations]
-            COM2[Kubernetes Mgmt]
-            COM3[Slack Integration]
-            COM4[Jira Connector]
-        end
-        
-        subgraph "AgentFlow Core"
-            CORE[Framework Core]
-        end
-        
-        CP1 --> CORE
-        CP2 --> CORE
-        CP3 --> CORE
-        CP4 --> CORE
-        
-        COM1 --> CORE
-        COM2 --> CORE
-        COM3 --> CORE
-        COM4 --> CORE
-    end
-    
-    style CP1 fill:#e3f2fd
-    style CP2 fill:#e3f2fd
-    style CP3 fill:#e3f2fd
-    style CP4 fill:#e3f2fd
-    style COM1 fill:#f3e5f5
-    style COM2 fill:#f3e5f5
-    style COM3 fill:#f3e5f5
-    style COM4 fill:#f3e5f5
-    style CORE fill:#fff3e0
-```
-
 ## Examples
 
 ### Support Agent
@@ -347,7 +265,6 @@ agent = await (AgentFrameworkBuilder()
         'OUTAGE': 0.7,      # Higher confidence needed
         'ESCALATION': 0.0   # Always escalate to humans
     })
-    .with_plugins(['company.jira', 'community.slack'])
     .build(llm_client, fastmcp_client))
 ```
 
@@ -362,7 +279,6 @@ ecommerce_categories = [
 
 agent = await (AgentFrameworkBuilder()
     .with_intent_categories(ecommerce_categories)
-    .with_plugins(['company.inventory', 'community.stripe', 'community.shipstation'])
     .with_middleware([
         PersonalizationMiddleware(),  # Recommend based on history
         InventoryMiddleware()         # Check stock levels
@@ -381,7 +297,6 @@ personal_categories = [
 
 agent = await (AgentFrameworkBuilder()
     .with_intent_categories(personal_categories)
-    .with_plugins(['google.calendar', 'gmail.api', 'todoist.sync'])
     .with_config({
         'session_config': {'ttl_seconds': 14400},  # 4 hour sessions
         'memory_config': {'max_episodic_per_user': 500}  # Remember more
@@ -509,9 +424,7 @@ spec:
 
 ## Documentation
 
-- **[High-Level Design](DESIGN_HL.md)** - Architecture overview with diagrams
 - **[Technical Specification](TECH_SPECS_FW.md)** - Complete implementation details
-- **[Plugin Development Guide](PLUGIN_USAGE_EXAMPLES.md)** - How to create plugins
 - **[Thread Detection Deep Dive](thread_detection.md)** - Conversation threading system
 
 ## Contributing
@@ -538,33 +451,7 @@ pytest
 black . && mypy .
 ```
 
-### Plugin Development
-
-1. **Create Plugin Structure**:
-   ```bash
-   mkdir my_plugin
-   cd my_plugin
-   # Follow plugin template structure
-   ```
-
-2. **Implement Plugin Interface**:
-   ```python
-   class MyPlugin:
-       def get_intent_categories(self): ...
-       def get_handlers(self): ...
-       def get_prompts(self): ...
-   ```
-
-3. **Test Your Plugin**:
-   ```bash
-   pytest tests/test_my_plugin.py
-   ```
-
-4. **Submit PR** with plugin and documentation
-
 ### Areas We Need Help
-
-- **Community Plugins**: AWS, Slack, Jira, Kubernetes, etc.
 - **Documentation**: More examples and tutorials
 - **Testing**: Integration tests and benchmarks
 - **Integrations**: More LLM providers and tool frameworks
@@ -579,7 +466,6 @@ black . && mypy .
 | Response Time (95th percentile) | < 5s | 3.2s |
 | Concurrent Users | 500+ | 750+ |
 | Memory Usage (per 100 users) | < 50MB | 32MB |
-| Plugin Load Time | < 2s | 1.1s |
 | Framework Overhead | < 100ms | 67ms |
 
 ### Scaling Characteristics
@@ -618,7 +504,7 @@ Apache 2.0 License - see [LICENSE](LICENSE) file for details.
 
 - Built on the shoulders of giants: FastAPI, Pydantic, AsyncIO
 - Inspired by successful frameworks: Express.js, Django, Spring
-- Community contributors and plugin developers
+- Community contributors and developers
 - Early adopters who provided valuable feedback
 
 ---
