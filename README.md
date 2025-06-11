@@ -248,27 +248,6 @@ gantt
     User 3 Request    :0, 5000
 ```
 
-### FastMCP Tool Integration
-Connect to any external system or API with built-in tool orchestration.
-
-```mermaid
-flowchart LR
-    U[User: "Check my AWS bill"] --> A[Agent]
-    A --> IC[Intent: AWS_BILLING]
-    IC --> H[Billing Handler]
-    H --> T1[AWS Cost Explorer]
-    H --> T2[Budget Alerts]
-    H --> T3[Usage Analytics]
-    T1 --> R[Response Generator]
-    T2 --> R
-    T3 --> R
-    R --> U
-    
-    style T1 fill:#ff9800
-    style T2 fill:#ff9800
-    style T3 fill:#ff9800
-```
-
 ## Plugin Ecosystem
 
 ### Use Community Plugins
@@ -633,7 +612,7 @@ Apache 2.0 License - see [LICENSE](LICENSE) file for details.
 - **GitHub Issues**: [Report bugs and request features](https://github.com/your-org/agentflow/issues)
 - **Discussions**: [Community discussions and Q&A](https://github.com/your-org/agentflow/discussions)
 - **Discord**: [Join our community chat](https://discord.gg/agentflow)
-- **Email**: support@agentflow.dev
+- **Email**: repque@agmail.com
 
 ## Acknowledgments
 
