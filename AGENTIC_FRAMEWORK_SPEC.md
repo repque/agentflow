@@ -8,32 +8,55 @@ AgentFlow is a reusable framework for building agentic applications with async w
 
 ### Core Principle: Separation of Concerns
 
-```
-┌─────────────────────────────────────────────────────────┐
-│                   APPLICATION LAYER                    │
-│  ┌─────────────────┐ ┌─────────────────┐ ┌──────────────┐  │
-│  │   Domain        │ │    Handlers     │ │   Prompts    │  │
-│  │ Configuration   │ │ Implementation  │ │ & Knowledge  │  │
-│  └─────────────────┘ └─────────────────┘ └──────────────┘  │
-└─────────────────────────────────────────────────────────┘
-┌─────────────────────────────────────────────────────────┐
-│                   FRAMEWORK CORE                       │
-│  ┌─────────────────┐ ┌─────────────────┐ ┌──────────────┐  │
-│  │     Agent       │ │    Session      │ │   Memory     │  │
-│  │  Orchestrator   │ │   Management    │ │    Store     │  │
-│  └─────────────────┘ └─────────────────┘ └──────────────┘  │
-│  ┌─────────────────┐ ┌─────────────────┐ ┌──────────────┐  │
-│  │     Intent      │ │    Handler      │ │   Thread     │  │
-│  │ Classification  │ │    Registry     │ │   Manager    │  │
-│  └─────────────────┘ └─────────────────┘ └──────────────┘  │
-└─────────────────────────────────────────────────────────┘
-┌─────────────────────────────────────────────────────────┐
-│                 INFRASTRUCTURE LAYER                   │
-│  ┌─────────────────┐ ┌─────────────────┐ ┌──────────────┐  │
-│  │    FastMCP      │ │      LLM        │ │   Vector     │  │
-│  │  Integration    │ │   Clients       │ │   Storage    │  │
-│  └─────────────────┘ └─────────────────┘ └──────────────┘  │
-└─────────────────────────────────────────────────────────┘
+```mermaid
+graph TB
+    subgraph "Application Layer"
+        DC[Domain Configuration]
+        HI[Handlers Implementation]
+        PK[Prompts & Knowledge]
+    end
+    
+    subgraph "Framework Core"
+        AO[Agent Orchestrator]
+        SM[Session Management]
+        MS[Memory Store]
+        IC[Intent Classification]
+        HR[Handler Registry]
+        TM[Thread Manager]
+    end
+    
+    subgraph "Infrastructure Layer"
+        FMI[FastMCP Integration]
+        LLC[LLM Clients]
+        VS[Vector Storage]
+    end
+    
+    DC --> AO
+    HI --> HR
+    PK --> AO
+    
+    AO --> SM
+    AO --> MS
+    AO --> IC
+    AO --> HR
+    AO --> TM
+    
+    AO --> FMI
+    AO --> LLC
+    MS --> VS
+    
+    style DC fill:#e1f5fe
+    style HI fill:#e1f5fe
+    style PK fill:#e1f5fe
+    style AO fill:#f3e5f5
+    style SM fill:#f3e5f5
+    style MS fill:#f3e5f5
+    style IC fill:#f3e5f5
+    style HR fill:#f3e5f5
+    style TM fill:#f3e5f5
+    style FMI fill:#fff3e0
+    style LLC fill:#fff3e0
+    style VS fill:#fff3e0
 ```
 
 ## Framework Core Components

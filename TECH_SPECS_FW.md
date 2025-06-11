@@ -10,50 +10,94 @@ AgentFlow is a comprehensive, production-ready framework for building conversati
 
 ### Three-Layer Design
 
-```
-┌─────────────────────────────────────────────────────────┐
-│                   APPLICATION LAYER                    │
-│  ┌─────────────────┐ ┌─────────────────┐ ┌──────────────┐  │
-│  │   Domain        │ │    Handlers     │ │   Prompts    │  │
-│  │ Configuration   │ │ Implementation  │ │ & Knowledge  │  │
-│  └─────────────────┘ └─────────────────┘ └──────────────┘  │
-└─────────────────────────────────────────────────────────┘
-┌─────────────────────────────────────────────────────────┐
-│                   FRAMEWORK CORE                       │
-│  ┌─────────────────┐ ┌─────────────────┐ ┌──────────────┐  │
-│  │     Agent       │ │    Session      │ │   Memory     │  │
-│  │  Orchestrator   │ │   Management    │ │    Store     │  │
-│  └─────────────────┘ └─────────────────┘ └──────────────┘  │
-│  ┌─────────────────┐ ┌─────────────────┐ ┌──────────────┐  │
-│  │     Intent      │ │    Handler      │ │   Thread     │  │
-│  │ Classification  │ │    Registry     │ │   Manager    │  │
-│  └─────────────────┘ └─────────────────┘ └──────────────┘  │
-└─────────────────────────────────────────────────────────┘
-┌─────────────────────────────────────────────────────────┐
-│                 INFRASTRUCTURE LAYER                   │
-│  ┌─────────────────┐ ┌─────────────────┐ ┌──────────────┐  │
-│  │    FastMCP      │ │      LLM        │ │   Vector     │  │
-│  │  Integration    │ │   Clients       │ │   Storage    │  │
-│  └─────────────────┘ └─────────────────┘ └──────────────┘  │
-└─────────────────────────────────────────────────────────┘
+```mermaid
+graph TB
+    subgraph "Application Layer"
+        DC[Domain Configuration]
+        HI[Handlers Implementation]
+        PK[Prompts & Knowledge]
+    end
+    
+    subgraph "Framework Core"
+        AO[Agent Orchestrator]
+        SM[Session Management]
+        MS[Memory Store]
+        IC[Intent Classification]
+        HR[Handler Registry]
+        TM[Thread Manager]
+    end
+    
+    subgraph "Infrastructure Layer"
+        FMI[FastMCP Integration]
+        LLC[LLM Clients]
+        VS[Vector Storage]
+    end
+    
+    DC --> AO
+    HI --> HR
+    PK --> AO
+    
+    AO --> SM
+    AO --> MS
+    AO --> IC
+    AO --> HR
+    AO --> TM
+    
+    AO --> FMI
+    AO --> LLC
+    MS --> VS
+    
+    style DC fill:#e1f5fe
+    style HI fill:#e1f5fe
+    style PK fill:#e1f5fe
+    style AO fill:#f3e5f5
+    style SM fill:#f3e5f5
+    style MS fill:#f3e5f5
+    style IC fill:#f3e5f5
+    style HR fill:#f3e5f5
+    style TM fill:#f3e5f5
+    style FMI fill:#fff3e0
+    style LLC fill:#fff3e0
+    style VS fill:#fff3e0
 ```
 
 ### Workflow Flow (Per-User Async)
 
-```
-User Message → User Session Lookup/Create → Intent Classification (async)
-                                                        ↓
-Handler Routing → [Query|Outage|Data|Escalation Handler] (user-isolated)
-                                                        ↓
-Parallel Processing:
-├── FastMCP Tool Calls
-├── User Memory Lookup  
-├── Knowledge Search
-└── Context Gathering
-                                                        ↓
-Response Generation → Confidence Evaluation → [Deliver Response|Human Escalation]
-                                                        ↓
-User Session Update → Memory Store Update (user-specific)
+```mermaid
+flowchart TD
+    UM[User Message] --> SL[User Session Lookup/Create]
+    SL --> IC[Intent Classification async]
+    IC --> HR[Handler Routing<br/>Query/Outage/Data/Escalation Handler<br/>user-isolated]
+    
+    HR --> PP[Parallel Processing]
+    PP --> FTC[FastMCP Tool Calls]
+    PP --> UML[User Memory Lookup]
+    PP --> KS[Knowledge Search]
+    PP --> CG[Context Gathering]
+    
+    FTC --> RG[Response Generation]
+    UML --> RG
+    KS --> RG
+    CG --> RG
+    
+    RG --> CE[Confidence Evaluation]
+    CE --> DR{Decision}
+    DR -->|High Confidence| DLR[Deliver Response]
+    DR -->|Low Confidence| HE[Human Escalation]
+    
+    DLR --> USU[User Session Update]
+    HE --> USU
+    USU --> MSU[Memory Store Update<br/>user-specific]
+    
+    style UM fill:#e8f5e8
+    style IC fill:#e1f5fe
+    style HR fill:#f3e5f5
+    style PP fill:#fff3e0
+    style RG fill:#f3e5f5
+    style CE fill:#f3e5f5
+    style DLR fill:#e8f5e8
+    style HE fill:#ffebee
+    style MSU fill:#e1f5fe
 ```
 
 ## Core Framework Components

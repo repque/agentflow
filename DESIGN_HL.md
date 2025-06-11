@@ -8,480 +8,468 @@ AgentFlow is a production-ready framework for building conversational AI agents 
 
 ## System Architecture Overview
 
-```
-┌─────────────────────────────────────────────────────────────────────────────────┐
-│                              AgentFlow Ecosystem                               │
-└─────────────────────────────────────────────────────────────────────────────────┘
-
-        ┌─────────────────┐    ┌─────────────────┐    ┌─────────────────┐
-        │   Support Bot   │    │  E-commerce     │    │   Personal      │
-        │                 │    │   Assistant     │    │   Assistant     │
-        │ • QUERY         │    │ • PRODUCT_INQ   │    │ • SCHEDULE      │
-        │ • OUTAGE        │    │ • ORDER_STATUS  │    │ • REMINDER      │
-        │ • DATA_ISSUE    │    │ • RETURNS       │    │ • EMAIL         │
-        │ • ESCALATION    │    │ • RECOMMEND     │    │ • TASK          │
-        └─────────────────┘    └─────────────────┘    └─────────────────┘
-                 │                        │                        │
-                 └────────────────────────┼────────────────────────┘
-                                          │
-        ┌─────────────────────────────────┼─────────────────────────────────┐
-        │                    AgentFlow Framework Core                     │
-        │                                 │                               │
-        │  ┌─────────────────┐   ┌────────┴────────┐   ┌─────────────────┐ │
-        │  │     Intent      │   │     Agent       │   │    Handler      │ │
-        │  │ Classification  │◄──┤   Orchestrator  ├──►│    Registry     │ │
-        │  └─────────────────┘   └────────┬────────┘   └─────────────────┘ │
-        │                                 │                               │
-        │  ┌─────────────────┐   ┌────────┴────────┐   ┌─────────────────┐ │
-        │  │    Session      │◄──┤     Thread      ├──►│     Memory      │ │
-        │  │   Manager       │   │    Manager      │   │     Store       │ │
-        │  └─────────────────┘   └─────────────────┘   └─────────────────┘ │
-        └─────────────────────────────────────────────────────────────────┘
-                                          │
-        ┌─────────────────────────────────┼─────────────────────────────────┐
-        │                  Infrastructure Layer                           │
-        │                                 │                               │
-        │  ┌─────────────────┐   ┌────────┴────────┐   ┌─────────────────┐ │
-        │  │    FastMCP      │   │      LLM        │   │    Vector       │ │
-        │  │  Integration    │   │    Clients      │   │   Database      │ │
-        │  └─────────────────┘   └─────────────────┘   └─────────────────┘ │
-        └─────────────────────────────────────────────────────────────────┘
+```mermaid
+graph TB
+    subgraph "Application Examples"
+        SB[Support Bot<br/>• QUERY<br/>• OUTAGE<br/>• DATA_ISSUE<br/>• ESCALATION]
+        EA[E-commerce Assistant<br/>• PRODUCT_INQ<br/>• ORDER_STATUS<br/>• RETURNS<br/>• RECOMMEND]
+        PA[Personal Assistant<br/>• SCHEDULE<br/>• REMINDER<br/>• EMAIL<br/>• TASK]
+    end
+    
+    subgraph "AgentFlow Framework Core"
+        IC[Intent Classification]
+        AO[Agent Orchestrator]
+        HR[Handler Registry]
+        SM[Session Manager]
+        TM[Thread Manager]
+        MS[Memory Store]
+    end
+    
+    subgraph "Infrastructure Layer"
+        FMI[FastMCP Integration]
+        LLC[LLM Clients]
+        VDB[Vector Database]
+    end
+    
+    SB --> AO
+    EA --> AO
+    PA --> AO
+    
+    IC --> AO
+    AO --> HR
+    SM --> TM
+    TM --> MS
+    
+    AO --> FMI
+    AO --> LLC
+    MS --> VDB
+    
+    style SB fill:#e3f2fd
+    style EA fill:#e8f5e8
+    style PA fill:#fff3e0
+    style AO fill:#f3e5f5
+    style IC fill:#f3e5f5
+    style HR fill:#f3e5f5
+    style SM fill:#f3e5f5
+    style TM fill:#f3e5f5
+    style MS fill:#f3e5f5
 ```
 
 ## Core Design Principles
 
 ### 1. **Separation of Concerns**
-```
-┌─────────────────────────────────────────────────────────────────┐
-│                        Domain Layer                            │
-│  What makes your agent unique (20% of effort)                  │
-│                                                                 │
-│  ┌─────────────┐  ┌─────────────┐  ┌─────────────┐             │
-│  │   Intent    │  │   Domain    │  │   System    │             │
-│  │ Categories  │  │  Handlers   │  │  Prompts    │             │
-│  └─────────────┘  └─────────────┘  └─────────────┘             │
-└─────────────────────────────────────────────────────────────────┘
-┌─────────────────────────────────────────────────────────────────┐
-│                      Framework Layer                           │
-│  Reusable infrastructure (80% of effort)                       │
-│                                                                 │
-│  ┌─────────────┐  ┌─────────────┐  ┌─────────────┐             │
-│  │ Orchestr.   │  │  Session    │  │   Thread    │             │
-│  │   Engine    │  │  Manager    │  │  Detection  │             │
-│  └─────────────┘  └─────────────┘  └─────────────┘             │
-└─────────────────────────────────────────────────────────────────┘
+```mermaid
+graph TB
+    subgraph "Domain Layer - What makes your agent unique (20% of effort)"
+        IC[Intent Categories]
+        DH[Domain Handlers]
+        SP[System Prompts]
+    end
+    
+    subgraph "Framework Layer - Reusable infrastructure (80% of effort)"
+        OE[Orchestrator Engine]
+        SM[Session Manager]
+        TD[Thread Detection]
+    end
+    
+    style IC fill:#e1f5fe
+    style DH fill:#e1f5fe
+    style SP fill:#e1f5fe
+    style OE fill:#f3e5f5
+    style SM fill:#f3e5f5
+    style TD fill:#f3e5f5
 ```
 
 ### 2. **Plugin Architecture**
-```
-                         ┌─ Company Plugins ─┐
-                         │                   │
-       ┌─────────────────┼───────────────────┼─────────────────┐
-       │                 │                   │                 │
-   ┌───▼───┐         ┌───▼───┐           ┌───▼───┐         ┌───▼───┐
-   │ Acme  │         │ Acme  │           │ Acme  │         │ Acme  │
-   │Support│         │ HR    │           │Security│        │Deploy │
-   │Plugin │         │Plugin │           │Plugin │         │Plugin │
-   └───┬───┘         └───┬───┘           └───┬───┘         └───┬───┘
-       │                 │                   │                 │
-       └─────────────────┼───────────────────┼─────────────────┘
-                         │   Framework Core  │
-       ┌─────────────────┼───────────────────┼─────────────────┐
-       │                 │                   │                 │
-   ┌───▼───┐         ┌───▼───┐           ┌───▼───┐         ┌───▼───┐
-   │  AWS  │         │Slack  │           │ Jira  │         │ K8s   │
-   │Plugin │         │Plugin │           │Plugin │         │Plugin │
-   └───────┘         └───────┘           └───────┘         └───────┘
-                         │                   │
-                         └─ Community Plugins ┘
+```mermaid
+graph TB
+    subgraph "Company Plugins"
+        ASP[Acme Support Plugin]
+        AHP[Acme HR Plugin]
+        ASEP[Acme Security Plugin]
+        ADP[Acme Deploy Plugin]
+    end
+    
+    subgraph "Framework Core"
+        FC[Framework Core]
+    end
+    
+    subgraph "Community Plugins"
+        AWP[AWS Plugin]
+        SP[Slack Plugin]
+        JP[Jira Plugin]
+        KP[K8s Plugin]
+    end
+    
+    ASP --> FC
+    AHP --> FC
+    ASEP --> FC
+    ADP --> FC
+    
+    AWP --> FC
+    SP --> FC
+    JP --> FC
+    KP --> FC
+    
+    style ASP fill:#e3f2fd
+    style AHP fill:#e3f2fd
+    style ASEP fill:#e3f2fd
+    style ADP fill:#e3f2fd
+    style FC fill:#fff3e0
+    style AWP fill:#f3e5f5
+    style SP fill:#f3e5f5
+    style JP fill:#f3e5f5
+    style KP fill:#f3e5f5
 ```
 
 ### 3. **User Isolation & Threading**
-```
-User A Session                           User B Session
-┌─────────────────┐                     ┌─────────────────┐
-│ Thread 1: Login │                     │ Thread 1: Order │
-│ ├─ Issue        │                     │ ├─ Status Query │
-│ ├─ Resolution   │                     │ └─ Resolved     │
-│ └─ Closed       │     Framework       │                 │
-│                 │         Core        │ Thread 2: Return│
-│ Thread 2: Bug   │ ◄─────────────────► │ ├─ Request      │
-│ ├─ Report       │    (Orchestrates    │ ├─ Processing   │
-│ ├─ Investigation│     all users       │ └─ Active       │
-│ └─ Active       │     independently)  │                 │
-└─────────────────┘                     └─────────────────┘
-
-            ↓ Memory Isolation ↓
-┌─────────────────┐                     ┌─────────────────┐
-│ User A Memory   │                     │ User B Memory   │
-│ • Past Issues   │                     │ • Order History │
-│ • Preferences   │                     │ • Preferences   │
-│ • Context       │                     │ • Context       │
-└─────────────────┘                     └─────────────────┘
+```mermaid
+graph TB
+    subgraph "User A Session"
+        AT1[Thread 1: Login Issue<br/>├─ Issue<br/>├─ Resolution<br/>└─ Closed]
+        AT2[Thread 2: Bug Report<br/>├─ Report<br/>├─ Investigation<br/>└─ Active]
+        AM[User A Memory<br/>• Past Issues<br/>• Preferences<br/>• Context]
+    end
+    
+    subgraph "Framework Core"
+        FC[Framework Core<br/>Orchestrates all users<br/>independently]
+    end
+    
+    subgraph "User B Session"
+        BT1[Thread 1: Order Status<br/>├─ Status Query<br/>└─ Resolved]
+        BT2[Thread 2: Return Request<br/>├─ Request<br/>├─ Processing<br/>└─ Active]
+        BM[User B Memory<br/>• Order History<br/>• Preferences<br/>• Context]
+    end
+    
+    AT1 --> FC
+    AT2 --> FC
+    AM --> FC
+    
+    FC --> BT1
+    FC --> BT2
+    FC --> BM
+    
+    style AT1 fill:#e8f5e8
+    style AT2 fill:#e8f5e8
+    style AM fill:#e8f5e8
+    style FC fill:#f3e5f5
+    style BT1 fill:#fff3e0
+    style BT2 fill:#fff3e0
+    style BM fill:#fff3e0
 ```
 
 ## Message Processing Flow
 
-```
-   User Message
-        │
-        ▼
-   ┌─────────┐
-   │ Session │ ──── Load/Create User Session
-   │ Lookup  │      (with conversation threads)
-   └────┬────┘
-        │
-        ▼
-   ┌─────────┐
-   │ Intent  │ ──── Classify: QUERY | OUTAGE | ORDER_STATUS | etc.
-   │Classify │      (using domain-specific categories)
-   └────┬────┘
-        │
-        ▼
-   ┌─────────┐
-   │ Thread  │ ──── Detect: NEW_TOPIC | CONTINUATION | RESOLUTION
-   │Detector │      (maintain conversation context)
-   └────┬────┘
-        │
-        ▼
-   ┌─────────┐      ┌──────────────┐ ┌──────────────┐ ┌──────────────┐
-   │Context  │ ───► │ Memory Lookup│ │FastMCP Tools │ │Knowledge Base│
-   │Gatherer │      │(similar cases)│ │(diagnostics) │ │  (search)    │
-   └────┬────┘      └──────────────┘ └──────────────┘ └──────────────┘
-        │                     ▲               ▲               ▲
-        │                     │               │               │
-        └─────────────────────┴───────────────┴───────────────┘
-        │                  (Parallel Processing)
-        ▼
-   ┌─────────┐
-   │Handler  │ ──── Route to: QueryHandler | OutageHandler | OrderHandler
-   │Registry │      (domain-specific processing)
-   └────┬────┘
-        │
-        ▼
-   ┌─────────┐
-   │Response │ ──── Generate human-readable response
-   │Generator│      (using domain prompts + LLM)
-   └────┬────┘
-        │
-        ▼
-   ┌─────────┐
-   │Confidence│ ──── Evaluate: High confidence → Deliver
-   │Evaluator│      Low confidence → Escalate to human
-   └────┬────┘
-        │
-        ▼
-   ┌─────────┐
-   │ Update  │ ──── Save conversation, update memory
-   │ State   │      (user-specific storage)
-   └────┬────┘
-        │
-        ▼
-    Final Response
+```mermaid
+flowchart TD
+    UM[User Message] --> SL[Session Lookup]
+    SL --> |Load/Create User Session<br/>with conversation threads| IC[Intent Classify]
+    IC --> |Classify: QUERY/OUTAGE/ORDER_STATUS<br/>using domain-specific categories| TD[Thread Detector]
+    TD --> |Detect: NEW_TOPIC/CONTINUATION/RESOLUTION<br/>maintain conversation context| CG[Context Gatherer]
+    
+    CG --> ML[Memory Lookup<br/>similar cases]
+    CG --> FT[FastMCP Tools<br/>diagnostics]
+    CG --> KB[Knowledge Base<br/>search]
+    
+    ML --> |Parallel Processing| HR[Handler Registry]
+    FT --> HR
+    KB --> HR
+    
+    HR --> |Route to: QueryHandler/OutageHandler/OrderHandler<br/>domain-specific processing| RG[Response Generator]
+    RG --> |Generate human-readable response<br/>using domain prompts + LLM| CE[Confidence Evaluator]
+    CE --> |High confidence → Deliver<br/>Low confidence → Escalate| US[Update State]
+    US --> |Save conversation, update memory<br/>user-specific storage| FR[Final Response]
+    
+    style UM fill:#e8f5e8
+    style SL fill:#e1f5fe
+    style IC fill:#e1f5fe
+    style TD fill:#e1f5fe
+    style CG fill:#f3e5f5
+    style ML fill:#fff3e0
+    style FT fill:#fff3e0
+    style KB fill:#fff3e0
+    style HR fill:#f3e5f5
+    style RG fill:#f3e5f5
+    style CE fill:#f3e5f5
+    style US fill:#f3e5f5
+    style FR fill:#e8f5e8
 ```
 
 ## Thread Detection System
 
+```mermaid
+flowchart TD
+    NM[New Message:<br/>"Actually, I have a different question about S3"] --> MFA[Multi-Factor Analysis]
+    
+    MFA --> KA[Keyword Analysis<br/>"actually"<br/>"different"]
+    MFA --> SA[Semantic Analysis<br/>Vector similarity<br/>< 0.3]
+    MFA --> TA[Temporal Analysis<br/>30min gap]
+    
+    KA --> D[Decision Engine]
+    SA --> D
+    TA --> D
+    
+    D --> DEC[Decision:<br/>NEW_TOPIC<br/>Confidence: 0.8]
+    DEC --> CNT[Create New Thread<br/>"S3_question_1435"]
+    
+    style MFA fill:#f3e5f5
+    style KA fill:#e1f5fe
+    style SA fill:#e1f5fe
+    style TA fill:#e1f5fe
+    style D fill:#fff3e0
+    style DEC fill:#e8f5e8
+    style CNT fill:#e8f5e8
 ```
-Conversation Thread Detection
-┌─────────────────────────────────────────────────────────────────┐
-│                                                                 │
-│  New Message: "Actually, I have a different question about S3" │
-│                                                                 │
-└────────────────────┬────────────────────────────────────────────┘
-                     │
-          ┌──────────┴──────────┐
-          │   Multi-Factor      │
-          │     Analysis        │
-          └──────────┬──────────┘
-                     │
-    ┌────────────────┼────────────────┐
-    │                │                │
-    ▼                ▼                ▼
-┌─────────┐    ┌─────────┐    ┌─────────┐
-│Keyword  │    │Semantic │    │Temporal │
-│Analysis │    │Analysis │    │Analysis │
-│         │    │         │    │         │
-│"actually"│    │Vector   │    │30min    │
-│"different"│   │similarity│   │gap      │
-│         │    │< 0.3    │    │         │
-└─────────┘    └─────────┘    └─────────┘
-    │                │                │
-    └────────────────┼────────────────┘
-                     │
-                     ▼
-            ┌─────────────────┐
-            │   Decision:     │
-            │   NEW_TOPIC     │
-            │ Confidence: 0.8 │
-            └─────────────────┘
-                     │
-                     ▼
-          ┌──────────────────────┐
-          │  Create New Thread   │
-          │ "S3_question_1435"   │
-          └──────────────────────┘
 
-Thread Transition Types:
-┌─────────────┬─────────────────────────────────────────┐
-│ NEW_TOPIC   │ "Actually, different question about..." │
-│ FOLLOW_UP   │ "And also, regarding that issue..."     │
-│ CLARIFY     │ "What do you mean by restart?"         │
-│ ESCALATION  │ "This is urgent, production is down"   │
-│ RESOLUTION  │ "Thanks, that fixed it!"               │
-│ CONTINUE    │ "Yes, that's exactly the problem"      │
-└─────────────┴─────────────────────────────────────────┘
-```
+**Thread Transition Types:**
+- **NEW_TOPIC**: "Actually, different question about..."
+- **FOLLOW_UP**: "And also, regarding that issue..."
+- **CLARIFY**: "What do you mean by restart?"
+- **ESCALATION**: "This is urgent, production is down"
+- **RESOLUTION**: "Thanks, that fixed it!"
+- **CONTINUE**: "Yes, that's exactly the problem"
 
 ## Plugin Ecosystem Design
 
 ### Plugin Internal Structure
-```
-aws_operations_plugin/
-├── plugin.py              ◄── Main orchestrator
-├── categories.py          ◄── Intent definitions
-├── handlers/              ◄── Domain logic
-│   ├── billing_handler.py
-│   ├── outage_handler.py
-│   └── security_handler.py
-├── tools/                 ◄── External integrations
-│   ├── aws_cost_explorer.py
-│   ├── aws_health_checker.py
-│   └── aws_security_analyzer.py
-├── prompts/               ◄── LLM system prompts
-│   └── billing_prompts.py
-├── config/                ◄── Configuration schemas
-│   └── aws_config.py
-└── tests/                 ◄── Plugin tests
-    └── test_handlers.py
-
-Plugin Loading Flow:
-Discovery → Import → Register → Initialize → Integrate
+```mermaid
+graph TD
+    subgraph "AWS Operations Plugin Structure"
+        PM[plugin.py - Main orchestrator]
+        CAT[categories.py - Intent definitions]
+        
+        subgraph "handlers/"
+            BH[billing_handler.py]
+            OH[outage_handler.py]
+            SH[security_handler.py]
+        end
+        
+        subgraph "tools/"
+            ACE[aws_cost_explorer.py]
+            AHC[aws_health_checker.py]
+            ASA[aws_security_analyzer.py]
+        end
+        
+        subgraph "prompts/"
+            BP[billing_prompts.py]
+        end
+        
+        subgraph "config/"
+            AC[aws_config.py]
+        end
+        
+        subgraph "tests/"
+            TH[test_handlers.py]
+        end
+    end
+    
+    PLF[Plugin Loading Flow:<br/>Discovery → Import → Register → Initialize → Integrate]
+    
+    style PM fill:#f3e5f5
+    style CAT fill:#e1f5fe
+    style BH fill:#e8f5e8
+    style OH fill:#e8f5e8
+    style SH fill:#e8f5e8
 ```
 
 ### Plugin Distribution Model
-```
-                    ┌─ Internal Company Registry ─┐
-                    │                             │
-    ┌───────────────┼─────────────────────────────┼───────────────┐
-    │               │                             │               │
-┌───▼────┐     ┌────▼────┐                  ┌────▼────┐     ┌────▼────┐
-│ Acme   │     │ Acme    │                  │ Acme    │     │ Acme    │
-│Support │     │Security │                  │ HR      │     │Deploy   │
-│v2.1.0  │     │v1.5.0   │                  │v3.0.0   │     │v1.2.0   │
-└────────┘     └─────────┘                  └─────────┘     └─────────┘
-
-    │                               │                               │
-    └───────────────────────────────┼───────────────────────────────┘
-                                    │
-                    ┌─ Community Plugin Registry ─┐
-                    │                             │
-    ┌───────────────┼─────────────────────────────┼───────────────┐
-    │               │                             │               │
-┌───▼────┐     ┌────▼────┐                  ┌────▼────┐     ┌────▼────┐
-│  AWS   │     │ Slack   │                  │  Jira   │     │  K8s    │
-│v3.2.1  │     │v2.0.0   │                  │v1.8.0   │     │v2.5.0   │
-└────────┘     └─────────┘                  └─────────┘     └─────────┘
-
-Installation:
-pip install acme-agentflow-plugins    # Company plugins
-pip install agentflow-aws-plugin      # Community plugins
+```mermaid
+graph TB
+    subgraph "Internal Company Registry"
+        ICR[Company Registry]
+    end
+    
+    subgraph "Company Plugins"
+        AS[Acme Support<br/>v2.1.0]
+        ASec[Acme Security<br/>v1.5.0]
+        AHR[Acme HR<br/>v3.0.0]
+        AD[Acme Deploy<br/>v1.2.0]
+    end
+    
+    subgraph "Community Plugin Registry"
+        CPR[Community Registry]
+    end
+    
+    subgraph "Community Plugins"
+        AWS[AWS<br/>v3.2.1]
+        SL[Slack<br/>v2.0.0]
+        JI[Jira<br/>v1.8.0]
+        K8[K8s<br/>v2.5.0]
+    end
+    
+    ICR --> AS
+    ICR --> ASec
+    ICR --> AHR
+    ICR --> AD
+    
+    CPR --> AWS
+    CPR --> SL
+    CPR --> JI
+    CPR --> K8
+    
+    INST[Installation:<br/>pip install acme-agentflow-plugins<br/>pip install agentflow-aws-plugin]
+    
+    style ICR fill:#e3f2fd
+    style AS fill:#e3f2fd
+    style ASec fill:#e3f2fd
+    style AHR fill:#e3f2fd
+    style AD fill:#e3f2fd
+    style CPR fill:#f3e5f5
+    style AWS fill:#f3e5f5
+    style SL fill:#f3e5f5
+    style JI fill:#f3e5f5
+    style K8 fill:#f3e5f5
 ```
 
 ## Configuration Architecture
 
-```
-Configuration Sources & Hierarchy:
-
-┌─────────────────────────────────────────────────────────────────┐
-│                    Configuration Layers                        │
-├─────────────────────────────────────────────────────────────────┤
-│ 1. Environment Variables  (Highest Priority)                   │
-│    AGENT_SESSION_TTL_SECONDS=7200                              │
-│    AGENT_CONFIDENCE_THRESHOLD=0.6                              │
-├─────────────────────────────────────────────────────────────────┤
-│ 2. YAML/JSON Config Files                                      │
-│    production_config.yaml, staging_config.yaml                 │
-├─────────────────────────────────────────────────────────────────┤
-│ 3. Plugin Configurations                                       │
-│    aws_plugin.yaml, slack_plugin.yaml                          │
-├─────────────────────────────────────────────────────────────────┤
-│ 4. Framework Defaults     (Lowest Priority)                    │
-│    Built-in sensible defaults                                  │
-└─────────────────────────────────────────────────────────────────┘
-
-Configuration Schema (Type-Safe with Pydantic):
-
-┌─────────────────┐    ┌─────────────────┐    ┌─────────────────┐
-│ SessionConfig   │    │ MemoryConfig    │    │ConfidenceConfig│
-│                 │    │                 │    │                 │
-│ • ttl_seconds   │    │ • max_per_user  │    │ • thresholds    │
-│ • cleanup_int   │    │ • similarity    │    │ • escalation    │
-│ • max_sessions  │    │ • vector_dim    │    │ • intent_specific│
-└─────────────────┘    └─────────────────┘    └─────────────────┘
-         │                       │                       │
-         └───────────────────────┼───────────────────────┘
-                                 │
-                    ┌─────────────────────┐
-                    │ AgentFrameworkConfig│
-                    │                     │
-                    │ • name & version    │
-                    │ • llm_config        │
-                    │ • tools_config      │
-                    │ • domain_settings   │
-                    └─────────────────────┘
+```mermaid
+graph TB
+    subgraph "Configuration Priority Hierarchy"
+        subgraph "1. Environment Variables (Highest Priority)"
+            ENV[AGENT_SESSION_TTL_SECONDS=7200<br/>AGENT_CONFIDENCE_THRESHOLD=0.6]
+        end
+        
+        subgraph "2. YAML/JSON Config Files"
+            YAML[production_config.yaml<br/>staging_config.yaml]
+        end
+        
+        subgraph "3. Plugin Configurations"
+            PLUGIN[aws_plugin.yaml<br/>slack_plugin.yaml]
+        end
+        
+        subgraph "4. Framework Defaults (Lowest Priority)"
+            DEFAULTS[Built-in sensible defaults]
+        end
+    end
+    
+    subgraph "Configuration Schema (Type-Safe with Pydantic)"
+        SC[SessionConfig<br/>• ttl_seconds<br/>• cleanup_int<br/>• max_sessions]
+        MC[MemoryConfig<br/>• max_per_user<br/>• similarity<br/>• vector_dim]
+        CC[ConfidenceConfig<br/>• thresholds<br/>• escalation<br/>• intent_specific]
+        
+        AFC[AgentFrameworkConfig<br/>• name & version<br/>• llm_config<br/>• tools_config<br/>• domain_settings]
+    end
+    
+    SC --> AFC
+    MC --> AFC
+    CC --> AFC
+    
+    style ENV fill:#e8f5e8
+    style YAML fill:#e1f5fe
+    style PLUGIN fill:#fff3e0
+    style DEFAULTS fill:#f3e5f5
+    style AFC fill:#f9f9f9
 ```
 
 ## Builder Pattern Design
 
-```
-Agent Construction Flow:
-
-AgentFrameworkBuilder()
-    │
-    ├─ .with_config('production.yaml')
-    │   └── Load & validate configuration
-    │
-    ├─ .with_plugins(['aws_plugin', 'slack_plugin'])
-    │   ├── Auto-discover plugin modules
-    │   ├── Load intent categories
-    │   ├── Load handlers
-    │   ├── Load prompts
-    │   └── Load tool configs
-    │
-    ├─ .with_middleware([LoggingMiddleware(), RateLimitMiddleware()])
-    │   └── Setup cross-cutting concerns
-    │
-    ├─ .with_rate_limiting(120)
-    │   └── Add rate limiting middleware
-    │
-    ├─ .with_logging()
-    │   └── Add logging middleware
-    │
-    └─ .build(llm_client, fastmcp_client)
-        │
-        ├── Create core components:
-        │   ├── IntentClassifier
-        │   ├── HandlerRegistry
-        │   ├── MemoryStore
-        │   ├── SessionManager
-        │   ├── ThreadManager
-        │   ├── ConfidenceEvaluator
-        │   └── ToolManager
-        │
-        ├── Wire dependencies
-        │
-        └── Return configured AgentOrchestrator
-
-Result: Production-ready agent with domain-specific behavior
+```mermaid
+flowchart TD
+    AFB[AgentFrameworkBuilder]
+    
+    AFB --> WC[.with_config 'production.yaml'<br/>Load & validate configuration]
+    AFB --> WP[.with_plugins ['aws_plugin', 'slack_plugin']<br/>Auto-discover plugin modules<br/>Load intent categories, handlers, prompts, tools]
+    AFB --> WM[.with_middleware [LoggingMiddleware, RateLimitMiddleware]<br/>Setup cross-cutting concerns]
+    AFB --> WRL[.with_rate_limiting 120<br/>Add rate limiting middleware]
+    AFB --> WL[.with_logging<br/>Add logging middleware]
+    
+    WC --> BUILD[.build llm_client, fastmcp_client]
+    WP --> BUILD
+    WM --> BUILD
+    WRL --> BUILD
+    WL --> BUILD
+    
+    BUILD --> CC[Create core components:<br/>IntentClassifier<br/>HandlerRegistry<br/>MemoryStore<br/>SessionManager<br/>ThreadManager<br/>ConfidenceEvaluator<br/>ToolManager]
+    
+    CC --> WD[Wire dependencies]
+    WD --> AO[Return configured AgentOrchestrator]
+    
+    AO --> RESULT[Production-ready agent with domain-specific behavior]
+    
+    style AFB fill:#f3e5f5
+    style BUILD fill:#e8f5e8
+    style AO fill:#e1f5fe
+    style RESULT fill:#fff3e0
 ```
 
 ## Memory & State Management
 
-```
-Memory Architecture (Per-User Isolation):
-
-┌─────────────────────────────────────────────────────────────────┐
-│                        Global Memory                           │
-│                                                                 │
-│  ┌─────────────────┐              ┌─────────────────┐           │
-│  │ Semantic Memory │              │Procedural Memory│           │
-│  │                 │              │                 │           │
-│  │ • Platform Facts│              │ • Workflows     │           │
-│  │ • API Docs      │              │ • Best Practices│           │
-│  │ • Procedures    │              │ • Troubleshooting│          │
-│  └─────────────────┘              └─────────────────┘           │
-└─────────────────────────────────────────────────────────────────┘
-
-┌─ User A Memory ─┐  ┌─ User B Memory ─┐  ┌─ User C Memory ─┐
-│                 │  │                 │  │                 │
-│ Episodic:       │  │ Episodic:       │  │ Episodic:       │
-│ • Issue history │  │ • Order history │  │ • Task history  │
-│ • Solutions     │  │ • Preferences   │  │ • Reminders     │
-│ • Preferences   │  │ • Returns       │  │ • Contacts      │
-│                 │  │                 │  │                 │
-│ Active Threads: │  │ Active Threads: │  │ Active Threads: │
-│ • login_issue   │  │ • order_status  │  │ • meeting_req   │
-│ • bug_report    │  │ • return_req    │  │ • email_draft   │
-└─────────────────┘  └─────────────────┘  └─────────────────┘
-
-Session State Management:
-
-In-Memory Sessions (TTL-based)
-┌─────────────────────────────────────────────────────────────────┐
-│                     Session Manager                            │
-│                                                                 │
-│  User Session A          User Session B          User Session C │
-│  ┌─────────────┐        ┌─────────────┐        ┌─────────────┐   │
-│  │ TTL: 45min  │        │ TTL: 23min  │        │ TTL: 58min  │   │
-│  │ Threads: 2  │        │ Threads: 1  │        │ Threads: 3  │   │
-│  │ State: act  │        │ State: act  │        │ State: act  │   │
-│  └─────────────┘        └─────────────┘        └─────────────┘   │
-│                                                                 │
-│  ┌─────────────────────────────────────────────────────────┐   │
-│  │         Cleanup Task (every 5 minutes)                 │   │
-│  │         Removes expired sessions                       │   │
-│  └─────────────────────────────────────────────────────────┘   │
-└─────────────────────────────────────────────────────────────────┘
+```mermaid
+graph TB
+    subgraph "Global Memory"
+        SM[Semantic Memory<br/>• Platform Facts<br/>• API Docs<br/>• Procedures]
+        PM[Procedural Memory<br/>• Workflows<br/>• Best Practices<br/>• Troubleshooting]
+    end
+    
+    subgraph "User A Memory"
+        UAE[Episodic:<br/>• Issue history<br/>• Solutions<br/>• Preferences]
+        UAT[Active Threads:<br/>• login_issue<br/>• bug_report]
+    end
+    
+    subgraph "User B Memory"
+        UBE[Episodic:<br/>• Order history<br/>• Preferences<br/>• Returns]
+        UBT[Active Threads:<br/>• order_status<br/>• return_req]
+    end
+    
+    subgraph "User C Memory"
+        UCE[Episodic:<br/>• Task history<br/>• Reminders<br/>• Contacts]
+        UCT[Active Threads:<br/>• meeting_req<br/>• email_draft]
+    end
+    
+    subgraph "Session State Management - In-Memory Sessions (TTL-based)"
+        subgraph "Session Manager"
+            USA[User Session A<br/>TTL: 45min<br/>Threads: 2<br/>State: active]
+            USB[User Session B<br/>TTL: 23min<br/>Threads: 1<br/>State: active]
+            USC[User Session C<br/>TTL: 58min<br/>Threads: 3<br/>State: active]
+            
+            CT[Cleanup Task every 5 minutes<br/>Removes expired sessions]
+        end
+    end
+    
+    style SM fill:#f3e5f5
+    style PM fill:#f3e5f5
+    style UAE fill:#e8f5e8
+    style UAT fill:#e8f5e8
+    style UBE fill:#fff3e0
+    style UBT fill:#fff3e0
+    style UCE fill:#e1f5fe
+    style UCT fill:#e1f5fe
+    style USA fill:#e8f5e8
+    style USB fill:#fff3e0
+    style USC fill:#e1f5fe
+    style CT fill:#f9f9f9
 ```
 
 ## Middleware Pipeline
 
+```mermaid
+flowchart TD
+    IM[Incoming Message] --> AM[Authentication Middleware]
+    AM --> |Verify user identity<br/>Add user context| RL[Rate Limiting Middleware]
+    RL --> |Check requests/minute<br/>Enforce limits per user| LM[Logging Middleware]
+    LM --> |Log request details<br/>Add correlation ID| MM[Metrics Middleware]
+    MM --> |Record performance metrics<br/>Track usage patterns| FP[Framework Processing]
+    FP --> |Core message processing<br/>Agent Orchestrator| RF[Response Formatting]
+    RF --> |Transform response format<br/>Add metadata| AL[Audit Log Middleware]
+    AL --> |Record complete interaction<br/>Store for compliance| FR[Final Response]
+    
+    style IM fill:#e8f5e8
+    style AM fill:#e1f5fe
+    style RL fill:#e1f5fe
+    style LM fill:#e1f5fe
+    style MM fill:#e1f5fe
+    style FP fill:#f3e5f5
+    style RF fill:#fff3e0
+    style AL fill:#e1f5fe
+    style FR fill:#e8f5e8
 ```
-Request Processing Pipeline:
 
-Incoming Message
-        │
-        ▼
-┌─────────────────┐
-│ Authentication  │ ──── Verify user identity
-│   Middleware    │      Add user context
-└─────────────────┘
-        │
-        ▼
-┌─────────────────┐
-│  Rate Limiting  │ ──── Check requests/minute
-│   Middleware    │      Enforce limits per user
-└─────────────────┘
-        │
-        ▼
-┌─────────────────┐
-│    Logging      │ ──── Log request details
-│   Middleware    │      Add correlation ID
-└─────────────────┘
-        │
-        ▼
-┌─────────────────┐
-│    Metrics      │ ──── Record performance metrics
-│   Middleware    │      Track usage patterns
-└─────────────────┘
-        │
-        ▼
-┌─────────────────┐
-│   Framework     │ ──── Core message processing
-│   Processing    │      (Agent Orchestrator)
-└─────────────────┘
-        │
-        ▼
-┌─────────────────┐
-│   Response      │ ──── Transform response format
-│  Formatting     │      Add metadata
-└─────────────────┘
-        │
-        ▼
-┌─────────────────┐
-│   Audit Log     │ ──── Record complete interaction
-│   Middleware    │      Store for compliance
-└─────────────────┘
-        │
-        ▼
-   Final Response
-
-Middleware Benefits:
-• Cross-cutting concerns
-• Easy to add/remove features
-• Testable in isolation
-• Production monitoring
+**Middleware Benefits:**
+- Cross-cutting concerns
+- Easy to add/remove features
+- Testable in isolation
+- Production monitoring
 ```
 
 ## Deployment Architecture
