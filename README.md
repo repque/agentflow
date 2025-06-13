@@ -125,7 +125,7 @@ graph TB
     
     subgraph "Infrastructure Layer"
         LLM[LLM Clients]
-        MCP[FastMCP Tools]
+        MCP[Tools]
         VDB[Vector Database]
     end
     
@@ -140,7 +140,7 @@ graph TB
     AO --> CE
     
     AO --> LLM
-    AO --> MCP
+    LLM --> MCP
     MEM --> VDB
     
     style IC fill:#e1f5fe
