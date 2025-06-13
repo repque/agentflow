@@ -90,7 +90,6 @@ class MyAgent:
 agent = await (AgentFrameworkBuilder()
     .with_intent_categories(my_domain_categories)    # ← Your unique logic
     .with_handlers(my_domain_handlers)               # ← Your unique logic  
-    .with_handlers(my_domain_handlers)               # ← Your unique logic
     .with_config('production.yaml')                  # ← Production settings
     .build(llm_client, fastmcp_client))             # Ready to go!
 ```
